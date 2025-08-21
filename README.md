@@ -1,4 +1,7 @@
 # blueshift_anchor_escrow
+
+<img width="437" height="488" alt="Screenshot 2025-08-22 at 12 50 22 AM" src="https://github.com/user-attachments/assets/ffdc2607-6447-4ebd-a1bf-b72231785ad5" />
+
 This is the escrow exercise(the second one) by blueshift after completing introductory theory of anchor. 
 
 An escrow is a powerful financial tool that enables secure token swaps between two parties.
