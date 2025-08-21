@@ -1,3 +1,13 @@
+use anchor_lang::prelude::*;
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
+};
+
+use crate::state::Escrow;
+use crate::errors::EscrowError;
+
+#[derive(Accounts)]
 #[instruction(seed: u64)]
 pub struct Make<'info> {
     #[account(mut)]
@@ -5,12 +15,12 @@ pub struct Make<'info> {
     #[account(
         init,
         payer = maker,
-        space = Escrow::INIT_SPACE + Escrow::DISCRIMINATOR.len(),
+        space = Escrow::INIT_SPACE + 8, // 8 bytes for discriminator
         seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
         bump,
     )]
     pub escrow: Account<'info, Escrow>,
- 
+
     /// Token Accounts
     #[account(
         mint::token_program = token_program
@@ -35,7 +45,7 @@ pub struct Make<'info> {
         associated_token::token_program = token_program
     )]
     pub vault: InterfaceAccount<'info, TokenAccount>,
- 
+
     /// Programs
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
@@ -43,21 +53,21 @@ pub struct Make<'info> {
 }
 
 impl<'info> Make<'info> {
-    /// # Create the Escrow
-    fn populate_escrow(&mut self, seed: u64, amount: u64, bump: u8) -> Result<()> {
+    /// Create the Escrow
+    fn populate_escrow(&mut self, seed: u64, receive: u64, bump: u8) -> Result<()> {
         self.escrow.set_inner(Escrow {
             seed,
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
-            receive: amount,
+            receive,
             bump,
         });
- 
+
         Ok(())
     }
- 
-    /// # Deposit the tokens
+
+    /// Deposit the tokens
     fn deposit_tokens(&self, amount: u64) -> Result<()> {
         transfer_checked(
             CpiContext::new(
@@ -72,7 +82,7 @@ impl<'info> Make<'info> {
             amount,
             self.mint_a.decimals,
         )?;
- 
+
         Ok(())
     }
 }
@@ -81,12 +91,12 @@ pub fn handler(ctx: Context<Make>, seed: u64, receive: u64, amount: u64) -> Resu
     // Validate the amount
     require_gt!(receive, 0, EscrowError::InvalidAmount);
     require_gt!(amount, 0, EscrowError::InvalidAmount);
- 
+
     // Save the Escrow Data
     ctx.accounts.populate_escrow(seed, receive, ctx.bumps.escrow)?;
- 
+
     // Deposit Tokens
     ctx.accounts.deposit_tokens(amount)?;
- 
+
     Ok(())
 }
