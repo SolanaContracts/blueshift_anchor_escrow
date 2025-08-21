@@ -7,15 +7,12 @@ use anchor_spl::{
     },
 };
 
-use crate::state::Escrow;
-use crate::errors::EscrowError;
+use crate::{errors::EscrowError, state::Escrow};
 
 #[derive(Accounts)]
 pub struct Refund<'info> {
     #[account(mut)]
-    pub refundr: Signer<'info>,
-    #[account(mut)]
-    pub maker: SystemAccount<'info>,
+    pub maker: Signer<'info>,
     #[account(
         mut,
         close = maker,
@@ -23,13 +20,11 @@ pub struct Refund<'info> {
         bump = escrow.bump,
         has_one = maker @ EscrowError::InvalidMaker,
         has_one = mint_a @ EscrowError::InvalidMintA,
-        has_one = mint_b @ EscrowError::InvalidMintB,
     )]
     pub escrow: Box<Account<'info, Escrow>>,
 
     /// Token Accounts
     pub mint_a: Box<InterfaceAccount<'info, Mint>>,
-    pub mint_b: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
         associated_token::mint = mint_a,
@@ -39,7 +34,7 @@ pub struct Refund<'info> {
     pub vault: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
-        payer = refundr,
+        payer = maker,
         associated_token::mint = mint_a,
         associated_token::authority = maker,
         associated_token::token_program = token_program

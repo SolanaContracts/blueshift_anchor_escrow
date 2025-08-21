@@ -5,7 +5,6 @@ use anchor_spl::{
 };
 
 use crate::state::Escrow;
-use crate::errors::EscrowError;
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
@@ -15,7 +14,7 @@ pub struct Make<'info> {
     #[account(
         init,
         payer = maker,
-        space = Escrow::INIT_SPACE + 8, // 8 bytes for discriminator
+        space = Escrow::INIT_SPACE + Escrow::DISCRIMINATOR.len(),
         seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
         bump,
     )]
@@ -88,10 +87,6 @@ impl<'info> Make<'info> {
 }
 
 pub fn handler(ctx: Context<Make>, seed: u64, receive: u64, amount: u64) -> Result<()> {
-    // Validate the amount
-    require_gt!(receive, 0, EscrowError::InvalidAmount);
-    require_gt!(amount, 0, EscrowError::InvalidAmount);
-
     // Save the Escrow Data
     ctx.accounts.populate_escrow(seed, receive, ctx.bumps.escrow)?;
 

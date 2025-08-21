@@ -7,8 +7,7 @@ use anchor_spl::{
     },
 };
 
-use crate::state::Escrow;
-use crate::errors::EscrowError;
+use crate::{errors::EscrowError, state::Escrow};
 
 #[derive(Accounts)]
 pub struct Take<'info> {
